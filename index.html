@@ -1226,15 +1226,12 @@ function applySettings(){
   document.getElementById('ivtot').textContent=(curINC().a+curINC().b+curINC().c).toLocaleString();
 }
 
-// 저장된 URL이 있으면 setup bar 숨김 + 자동 불러오기
+// 저장된 URL이 있으면 setup bar 숨김
 document.addEventListener('DOMContentLoaded', ()=>{
   if(API_URL){
     document.getElementById('api-setup-bar').style.display='none';
     document.getElementById('api-url-inp').value = API_URL;
   }
-  // 접속 시 자동 불러오기 (localStorage 데이터 없을 때만)
-  const hasSaved = localStorage.getItem('kpi_monthData');
-  if(!hasSaved && API_URL) loadFromSheet();
 });
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -1276,6 +1273,9 @@ applySettings();
 renderMonthBar();
 renderInput();
 renderScore();
+
+// localStorage 데이터 없으면 자동 불러오기
+if(!localStorage.getItem('kpi_monthData') && API_URL) loadFromSheet();
 </script>
 </body>
 </html>
