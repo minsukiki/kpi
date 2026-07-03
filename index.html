@@ -1227,12 +1227,14 @@ function applySettings(){
 }
 
 // 저장된 URL이 있으면 setup bar 숨김 + 자동 불러오기
-if(API_URL) document.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('api-setup-bar').style.display='none';
-  document.getElementById('api-url-inp').value = API_URL;
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(API_URL){
+    document.getElementById('api-setup-bar').style.display='none';
+    document.getElementById('api-url-inp').value = API_URL;
+  }
   // 접속 시 자동 불러오기 (localStorage 데이터 없을 때만)
   const hasSaved = localStorage.getItem('kpi_monthData');
-  if(!hasSaved) loadFromSheet();
+  if(!hasSaved && API_URL) loadFromSheet();
 });
 function showToast(msg){
   const t=document.getElementById('toast');
