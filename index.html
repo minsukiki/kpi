@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI 점수 환산</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f6f8;--white:#fff;--border:#e4e4e4;--text:#1a1a1a;--sub:#888;
+  --accent:#3b5bdb;--accent-l:#eef2ff;--accent-2:#4263eb;
+  --green:#2f9e44;--orange:#e67700;--red:#c92a2a;
+  --row:#f5f7ff;
+  --tbj:#dbe4ff;--tbj-t:#3b5bdb;
+  --ttj:#d3f9d8;--ttj-t:#2b8a3e;
+  --tkl:#fff3bf;--tkl-t:#e67700;
+  --tnl:#ffe8cc;--tnl-t:#d9480f;
+  --r:10px;--rs:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pretendard,'Noto Sans KR',sans-serif;font-size:13px;line-height:1.5;}
+.page{max-width:980px;margin:0 auto;padding:20px 16px;}
+
+/* 헤더 */
+.ph{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--accent);}
+.pt{font-size:22px;font-weight:700;color:var(--accent);letter-spacing:-.5px;}
+.ps{font-size:11px;color:var(--sub);margin-top:3px;}
+
+/* 월 선택 바 */
+.month-bar{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.month-label{font-size:11px;font-weight:700;color:var(--sub);white-space:nowrap;}
+.month-btns{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.mb{padding:5px 10px;font-size:12px;font-weight:500;border-radius:var(--rs);border:1px solid var(--border);background:var(--white);color:var(--sub);cursor:pointer;transition:all .12s;white-space:nowrap;}
+.mb:hover{border-color:var(--accent);color:var(--accent);}
+.mb.active{background:var(--accent);color:#fff !important;border-color:var(--accent);}
+.mb.has-data{border-color:#c5cae9;color:var(--accent);font-weight:600;}
+.mb.is-main{outline:2px solid #ffd43b;outline-offset:1px;}
+.mb.is-main::after{content:'';}
+.btn-sync{padding:5px 12px;font-size:11.5px;font-weight:600;border-radius:var(--rs);border:1px solid var(--border);background:var(--white);color:var(--sub);cursor:pointer;transition:all .12s;}
+.btn-sync:hover{border-color:var(--accent);color:var(--accent);}
+.btn-sync-save{border-color:#5DCAA5;color:#0F6E56;background:#E1F5EE;}
+.btn-sync-save:hover{background:#0F6E56;color:#fff;border-color:#0F6E56;}
+.btn-sync:disabled{opacity:.45;cursor:not-allowed;}
+.btn-set-main{padding:4px 10px;font-size:11px;font-weight:600;border-radius:var(--rs);border:1px solid #ffd8a8;background:#fff9db;color:#e67700;cursor:pointer;white-space:nowrap;transition:all .12s;}
+.btn-set-main:hover{background:#ffd43b;color:#664d03;border-color:#ffd43b;}
+
+/* 탭 */
+.tab-nav{display:flex;gap:2px;margin-bottom:14px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:4px;}
+.tab-btn{flex:1;padding:9px 0;font-size:13px;font-weight:500;color:var(--sub);background:none;border:none;border-radius:var(--rs);cursor:pointer;transition:all .15s;}
+.tab-btn.active{background:var(--accent);color:#fff;font-weight:600;}
+.tab-btn:hover:not(.active){background:var(--accent-l);color:var(--accent);}
+.pane{display:none;}
+.pane.active{display:block;}
+
+/* 카드 */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.ch{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.ct{font-size:13px;font-weight:600;}
+
+/* 버튼 */
+.btn{padding:5px 13px;font-size:11.5px;font-weight:500;border-radius:var(--rs);border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .12s;}
+.bp{background:var(--accent);color:#fff;}.bp:hover{background:var(--accent-2);}
+.bg{background:none;border:1px solid var(--border);color:var(--sub);}.bg:hover,.bg.active{border-color:var(--accent);color:var(--accent);background:var(--accent-l);}
+.bsm{padding:4px 10px;font-size:11.5px;}
+.btn-dl{padding:5px 12px;font-size:11.5px;font-weight:600;border-radius:var(--rs);border:1px solid var(--green);background:#f0fdf4;color:var(--green);cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .12s;}
+.btn-dl:hover{background:var(--green);color:#fff;}
+.btn-dl-all{padding:5px 12px;font-size:11.5px;font-weight:600;border-radius:var(--rs);border:1px solid var(--accent);background:var(--accent-l);color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .12s;}
+.btn-dl-all:hover{background:var(--accent);color:#fff;}
+
+/* 담당자 추가 */
+.add-bar{padding:8px 16px;background:var(--accent-l);border-bottom:1px solid var(--border);display:none;gap:8px;align-items:center;flex-wrap:wrap;}
+.add-bar.open{display:flex;}
+.add-bar label{font-size:11px;color:var(--sub);}
+.add-bar input,.add-bar select{padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--text);}
+.add-bar input[type=text]{width:72px;}
+.add-bar input[type=number]{width:42px;text-align:center;}
+
+/* 테이블 */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl thead th{padding:9px 10px;font-size:11px;font-weight:600;color:var(--sub);background:var(--bg);border-bottom:1px solid var(--border);text-align:center;white-space:nowrap;}
+.tbl thead th.L{text-align:left;padding-left:16px;}
+.tbl tbody td{padding:8px 8px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;}
+.tbl tbody tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover{background:var(--row);}
+.tbl tbody td.nm{text-align:left;font-weight:600;font-size:13px;padding-left:16px;}
+
+/* 역할 태그 */
+.rt{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600;}
+.bj{background:var(--tbj);color:var(--tbj-t);}
+.tj{background:var(--ttj);color:var(--ttj-t);}
+.kl{background:var(--tkl);color:var(--tkl-t);}
+.nl{background:var(--tnl);color:var(--tnl-t);}
+
+/* 입력 셀 */
+.ci{width:92px;padding:5px 9px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--text);text-align:right;transition:border .12s;}
+.ci:focus{border-color:var(--accent);outline:none;background:var(--accent-l);}
+.ci.hv{border-color:#c5cae9;font-weight:500;}
+.del{background:none;border:none;cursor:pointer;color:#ccc;font-size:13px;padding:0 3px;}
+.del:hover{color:var(--red);}
+.drag-handle{cursor:grab;color:#ccc;font-size:13px;padding:0 3px;user-select:none;line-height:1;}
+.drag-handle:hover{color:var(--accent);}
+.tbl tbody tr.dragging{opacity:.35;background:var(--accent-l);}
+.tbl tbody tr.drag-over{border-top:2px solid var(--accent);}
+
+/* 설정 바 */
+.set-bar{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;background:#fafafa;}
+.set-sec{display:flex;flex-direction:column;gap:7px;}
+.set-title{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.04em;}
+.set-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sg{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--sub);}
+.sg input{padding:4px 8px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--text);text-align:right;}
+.sg input.goal-i{border-color:#ffd8a8;width:60px;}
+.sg input.goal-i:focus{border-color:var(--orange);outline:none;}
+.sg input.inc-i{border-color:#c5cae9;width:80px;}
+.sg input.inc-i:focus{border-color:var(--accent);outline:none;}
+.sg input.inc-sm{width:44px;text-align:center;}
+.vd{width:1px;height:16px;background:var(--border);}
+.sbd{width:1px;background:var(--border);align-self:stretch;margin:0 4px;}
+.save-row{display:flex;align-items:center;gap:10px;margin-top:2px;}
+.inc-tot{font-size:11.5px;color:var(--sub);}
+.save-btn{padding:5px 14px;font-size:12px;font-weight:600;border:none;border-radius:var(--rs);background:var(--accent);color:#fff;cursor:pointer;transition:background .12s;}
+.save-btn:hover{background:var(--accent-2);}
+.rk-circ{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700;flex-shrink:0;}
+
+/* 편집 버튼 / 보기-편집 모드 */
+.edit-btn{padding:3px 11px;font-size:11px;font-weight:500;border:1px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--sub);cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .12s;}
+.edit-btn:hover{border-color:var(--accent);color:var(--accent);}
+.edit-btn.editing{border-color:var(--green);color:var(--green);background:#f0fdf4;}
+.set-field{display:flex;align-items:center;gap:5px;}
+.field-view{display:flex;align-items:center;gap:4px;font-size:12.5px;}
+.field-view .val{font-weight:600;color:var(--text);}
+.field-edit{display:none;align-items:center;gap:5px;font-size:12.5px;color:var(--sub);}
+.editing-mode .field-view{display:none;}
+.editing-mode .field-edit{display:flex;}
+.unlock-bar{padding:6px 16px;border-top:1px solid var(--border);background:#f0fdf4;display:none;align-items:center;justify-content:space-between;}
+.unlock-bar.show{display:flex;}
+.unlock-msg{font-size:11.5px;color:var(--green);font-weight:500;}
+.relock-btn{font-size:11px;color:var(--sub);background:none;border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;padding:2px 9px;}
+.relock-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* 비밀번호 모달 */
+.pw-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;}
+.pw-backdrop.hidden{display:none;}
+.pw-modal{background:#fff;border-radius:var(--r);padding:28px 28px 22px;width:300px;box-shadow:0 12px 40px rgba(0,0,0,.2);}
+.pw-title{font-size:15px;font-weight:700;margin-bottom:4px;}
+.pw-sub{font-size:11.5px;color:var(--sub);margin-bottom:16px;}
+.pw-inp{width:100%;padding:10px 12px;font-size:15px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--text);letter-spacing:.25em;margin-bottom:6px;}
+.pw-inp:focus{border-color:var(--accent);outline:none;}
+.pw-inp.err{border-color:var(--red);}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.pw-inp.shake{animation:shake .3s;}
+.pw-err{font-size:11px;color:var(--red);min-height:16px;margin-bottom:12px;}
+.pw-btns{display:flex;gap:8px;}
+.pw-ok{flex:1;padding:9px;font-size:13px;font-weight:600;border:none;border-radius:var(--rs);background:var(--accent);color:#fff;cursor:pointer;}
+.pw-ok:hover{background:var(--accent-2);}
+.pw-cancel{padding:9px 16px;font-size:13px;border:1px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--sub);cursor:pointer;}
+
+/* 점수 탭 */
+.sv{font-weight:600;font-size:13px;}
+.shi{color:var(--green);}
+.smd{color:var(--orange);}
+.slo{color:var(--red);}
+.snn{color:#ccc;}
+.tv{font-size:15px;font-weight:700;color:var(--accent);}
+.tnn{font-size:15px;font-weight:700;color:#ccc;}
+
+.wbar{padding:9px 16px;background:#f8f9fa;border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.wbar .lbl{font-size:11px;font-weight:700;color:var(--accent);}
+.wg{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--sub);}
+.wg input{width:46px;padding:4px 6px;font-size:12.5px;border:1px solid #c5cae9;border-radius:var(--rs);background:#fff;text-align:center;color:var(--text);}
+.wg input:focus{border-color:var(--accent);outline:none;}
+.ws{font-size:11.5px;font-weight:600;margin-left:2px;}
+.ws.ok{color:var(--green);}
+.ws.bad{color:var(--red);}
+
+.bot{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;}
+.sc{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.st{font-size:14px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:6px;}
+.rrow{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);}
+.rrow:last-child{border-bottom:none;}
+.rnm{flex:1;font-size:13px;}
+.rsc{font-size:14px;font-weight:700;color:var(--accent);}
+.rb{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11.5px;font-weight:700;flex-shrink:0;}
+.rb1{background:#ffd43b;color:#664d03;}
+.rb2{background:#ced4da;color:#343a40;}
+.rb3{background:#f4956a;color:#6d2f1a;}
+.rbn{background:var(--bg);color:var(--sub);font-size:12.5px;font-weight:500;}
+.leg{font-size:11px;color:var(--sub);margin-top:9px;padding-top:9px;border-top:1px solid var(--border);line-height:2;}
+.irow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.irow:last-child{border-bottom:none;}
+.iamt{font-weight:700;color:var(--green);}
+.inc-note{font-size:11px;color:var(--sub);margin-top:9px;padding-top:9px;border-top:1px solid var(--border);}
+
+/* 토스트 */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:300;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- 비밀번호 모달 -->
+<div class="pw-backdrop hidden" id="pw-backdrop" onclick="closePwModal(event)">
+  <div class="pw-modal" onclick="event.stopPropagation()">
+    <div class="pw-title">🔒 관리자 설정</div>
+    <div class="pw-sub">담당자 전용 기능입니다. 비밀번호를 입력해주세요</div>
+    <input class="pw-inp" type="password" id="pw-inp" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryUnlock()">
+    <div class="pw-err" id="pw-err"></div>
+    <div class="pw-btns">
+      <button class="pw-cancel" onclick="closePwModal()">취소</button>
+      <button class="pw-ok" onclick="tryUnlock()">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+<div class="ph">
+  <div>
+    <div class="pt">KPI 점수 환산</div>
+    <div class="ps" id="ph-sub">2026년 6월 · SBS 사업부</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="sync-status" style="font-size:11px;color:var(--sub);"></span>
+    <button class="btn-sync" onclick="requestPw('gear')" title="Google 연동 설정">⚙️</button>
+    <button class="btn-sync" id="btn-load" onclick="requestPw('load')">☁️ 불러오기</button>
+    <button class="btn-sync btn-sync-save" id="btn-save-sheet" onclick="requestPw('save')">💾 저장</button>
+  </div>
+</div>
+
+<!-- 연동 설정 바 (처음 한 번만 URL 입력) -->
+<div id="api-setup-bar" style="background:#fff9db;border:1px solid #ffd8a8;border-radius:var(--r);padding:9px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+  <span style="font-size:12px;font-weight:600;color:var(--orange);">🔗 Google 연동</span>
+  <span style="font-size:11.5px;color:var(--sub);">Apps Script 배포 URL</span>
+  <input id="api-url-inp" type="text" placeholder="https://script.google.com/macros/s/.../exec"
+    style="flex:1;min-width:200px;padding:5px 9px;font-size:12px;border:1px solid #ffd8a8;border-radius:var(--rs);background:#fff;color:var(--text);">
+  <button onclick="saveApiUrl()" style="padding:5px 14px;font-size:12px;font-weight:600;border:none;border-radius:var(--rs);background:var(--orange);color:#fff;cursor:pointer;">저장</button>
+  <button onclick="document.getElementById('api-setup-bar').style.display='none'" style="padding:5px 10px;font-size:11px;border:1px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--sub);cursor:pointer;">닫기</button>
+</div>
+
+<!-- 월 선택 바 -->
+<div class="month-bar">
+  <span class="month-label">월 선택</span>
+  <div class="month-btns" id="month-btns"></div>
+  <div class="month-dl">
+    <button class="btn-set-main" onclick="requestSetMain()">⭐ 메인 월 설정</button>
+    <button class="btn-dl" onclick="downloadMonth()">📥 이번 달 엑셀</button>
+    <button class="btn-dl-all" onclick="downloadAll()">📦 전체 엑셀</button>
+  </div>
+</div>
+
+<!-- 탭 -->
+<div class="tab-nav">
+  <button class="tab-btn active" id="tab-score-btn" onclick="showTab('score',this)">📊 점수 환산</button>
+  <button class="tab-btn" onclick="showTab('input',this)">📋 데이터 입력</button>
+</div>
+
+<!-- ══ TAB 1: 점수 환산 ══ -->
+<div class="pane active" id="tab-score">
+  <div class="card">
+    <div class="ch"><span class="ct" id="score-title">점수 환산 결과</span></div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th class="L" style="width:88px;"></th>
+          <th style="width:52px;"></th>
+          <th colspan="4" style="background:#fff8f0;color:var(--orange);border-left:2px solid #ffd8a8;">실적 데이터</th>
+          <th colspan="5" style="background:var(--accent-l);color:var(--accent);border-left:2px solid var(--accent);">점수 환산 (자동)</th>
+          <th style="width:44px;"></th>
+        </tr>
+        <tr>
+          <th class="L">이름</th><th>직급</th>
+          <th style="background:#fff8f0;color:var(--orange);border-left:2px solid #ffd8a8;">상담률</th>
+          <th style="background:#fff8f0;color:var(--orange);">등록률</th>
+          <th style="background:#fff8f0;color:var(--orange);">등록단가</th>
+          <th style="background:#fff8f0;color:var(--orange);">환불률</th>
+          <th style="background:var(--accent-l);color:var(--accent);border-left:2px solid var(--accent);" id="th-c">상담<br><small>×25%</small></th>
+          <th style="background:var(--accent-l);color:var(--accent);" id="th-r">등록<br><small>×35%</small></th>
+          <th style="background:var(--accent-l);color:var(--accent);" id="th-s">매출<br><small>×30%</small></th>
+          <th style="background:var(--accent-l);color:var(--accent);" id="th-f">환불<br><small>×10%</small></th>
+          <th style="background:var(--accent-l);color:var(--accent);font-weight:700;">총점</th>
+          <th>순위</th>
+        </tr>
+      </thead>
+      <tbody id="stbody"></tbody>
+    </table>
+    <!-- 가중치 -->
+    <div class="wbar" id="wbar">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="lbl">가중치</span>
+        <button class="edit-btn" id="edit-btn-w" onclick="requestEdit('w')">🔒 수정</button>
+      </div>
+      <div class="set-field">
+        <div class="field-view"><span style="font-size:12.5px;color:var(--sub);">상담</span><span class="val" id="v-wc" style="font-size:12.5px;font-weight:600;">25</span><span style="font-size:12.5px;color:var(--sub);">%</span></div>
+        <div class="field-edit wg"><span>상담</span><input type="number" id="wc" value="25" min="0" max="100" oninput="chkW()"><span>%</span></div>
+      </div>
+      <div class="vd"></div>
+      <div class="set-field">
+        <div class="field-view"><span style="font-size:12.5px;color:var(--sub);">등록</span><span class="val" id="v-wr" style="font-size:12.5px;font-weight:600;">35</span><span style="font-size:12.5px;color:var(--sub);">%</span></div>
+        <div class="field-edit wg"><span>등록</span><input type="number" id="wr" value="35" min="0" max="100" oninput="chkW()"><span>%</span></div>
+      </div>
+      <div class="vd"></div>
+      <div class="set-field">
+        <div class="field-view"><span style="font-size:12.5px;color:var(--sub);">매출</span><span class="val" id="v-ws" style="font-size:12.5px;font-weight:600;">30</span><span style="font-size:12.5px;color:var(--sub);">%</span></div>
+        <div class="field-edit wg"><span>매출</span><input type="number" id="ws" value="30" min="0" max="100" oninput="chkW()"><span>%</span></div>
+      </div>
+      <div class="vd"></div>
+      <div class="set-field">
+        <div class="field-view"><span style="font-size:12.5px;color:var(--sub);">환불</span><span class="val" id="v-wf" style="font-size:12.5px;font-weight:600;">10</span><span style="font-size:12.5px;color:var(--sub);">%</span></div>
+        <div class="field-edit wg"><span>환불</span><input type="number" id="wf" value="10" min="0" max="100" oninput="chkW()"><span>%</span></div>
+      </div>
+      <span class="ws ok" id="wlbl" style="display:none;">합계 100% ✓</span>
+      <button class="relock-btn" id="w-done-btn" style="display:none;" onclick="relock('w')">완료 · 잠금</button>
+    </div>
+  </div>
+  <div class="bot">
+    <div class="sc">
+      <div class="st">🏆 현재 순위</div>
+      <div id="rank-panel"><div style="font-size:12px;color:var(--sub);">데이터 입력 탭에서 값을 입력해주세요</div></div>
+      <div class="leg" id="legend"></div>
+    </div>
+    <div class="sc">
+      <div class="st">🎁 인센티브 기준</div>
+      <div class="irow"><span style="display:flex;align-items:center;gap:7px;"><span class="rb rb1">1</span>총점 1위</span><span class="iamt" id="iv1">50만원</span></div>
+      <div class="irow"><span style="display:flex;align-items:center;gap:7px;"><span class="rb rb2">2</span>총점 2위</span><span class="iamt" id="iv2">20만원</span></div>
+      <div class="irow"><span style="display:flex;align-items:center;gap:7px;"><span class="rb rb3">3</span>총점 3위</span><span class="iamt" id="iv3">10만원</span></div>
+      <div class="inc-note">최소 <span id="ivmin">70</span>점 이상 · 총 상금 ₩<span id="ivtot">800,000</span></div>
+      <div style="font-size:11px;color:var(--sub);margin-top:8px;">✏️ 데이터 입력 탭 하단에서 수정</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 2: 데이터 입력 ══ -->
+<div class="pane" id="tab-input">
+  <div class="card">
+    <div class="ch">
+      <span class="ct" id="input-title">실적 입력</span>
+      <button class="btn bg bsm" id="btn-add" onclick="toggleAdd()">+ 담당자 추가</button>
+    </div>
+    <div class="add-bar" id="add-bar">
+      <label>이름</label><input type="text" id="inp-name" placeholder="이름">
+      <label>직급</label>
+      <select id="inp-role">
+        <option value="bj">부장</option><option value="tj">팀장</option>
+        <option value="kl" selected>경력</option><option value="nl">신인</option>
+      </select>
+      <label>위치</label><input type="number" id="inp-pos" value="1" min="1">
+      <button class="btn bp bsm" onclick="addPerson()">추가</button>
+      <button class="btn bg bsm" onclick="toggleAdd()">취소</button>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th class="L" style="width:100px;">이름</th>
+          <th style="width:58px;">직급</th>
+          <th style="background:#fff8f0;">상담률<br><small style="font-weight:400;color:var(--sub);">(목표 <span id="gc-lbl">60</span>%, 0~1 입력)</small></th>
+          <th style="background:#fff8f0;">등록률<br><small style="font-weight:400;color:var(--sub);">(목표 <span id="gr-lbl">70</span>%, 0~1 입력)</small></th>
+          <th style="background:#fff8f0;">등록단가<br><small style="font-weight:400;color:var(--sub);">(목표 <span id="gp-lbl">150만</span>원)</small></th>
+          <th style="background:#fff8f0;">환불률<br><small style="font-weight:400;color:var(--sub);">(≤ <span id="gf-lbl">8</span>%, 0~1 입력)</small></th>
+          <th style="width:24px;"></th>
+        </tr>
+      </thead>
+      <tbody id="itbody"></tbody>
+    </table>
+
+    <!-- 잠금 해제 바 (목표값) -->
+    <div class="unlock-bar" id="unlock-bar-goal">
+      <span class="unlock-msg">🔓 목표값 편집 중</span>
+      <button class="relock-btn" onclick="relock('goal')">완료 · 잠금</button>
+    </div>
+
+    <!-- 설정 바 -->
+    <div class="set-bar">
+      <!-- 목표값 -->
+      <div class="set-sec">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+          <span class="set-title" style="margin-bottom:0;">🎯 목표값</span>
+          <button class="edit-btn" id="edit-btn-goal" onclick="requestEdit('goal')">🔒 수정</button>
+        </div>
+        <div class="set-row" id="goal-fields">
+          <div class="set-field">
+            <div class="field-view"><span style="font-size:12px;color:var(--sub);">상담</span><span class="val" id="v-gc">60</span><span style="font-size:12px;color:var(--sub);">%</span></div>
+            <div class="field-edit"><span>상담</span><input type="number" class="goal-i" id="gc" value="60" oninput="updGoal()"><span>%</span></div>
+          </div>
+          <div class="vd"></div>
+          <div class="set-field">
+            <div class="field-view"><span style="font-size:12px;color:var(--sub);">등록</span><span class="val" id="v-gr">70</span><span style="font-size:12px;color:var(--sub);">%</span></div>
+            <div class="field-edit"><span>등록</span><input type="number" class="goal-i" id="gr" value="70" oninput="updGoal()"><span>%</span></div>
+          </div>
+          <div class="vd"></div>
+          <div class="set-field">
+            <div class="field-view"><span style="font-size:12px;color:var(--sub);">단가</span><span class="val" id="v-gp">150만</span><span style="font-size:12px;color:var(--sub);">원</span></div>
+            <div class="field-edit"><span>단가</span><input type="number" class="goal-i" id="gp" value="1500000" style="width:90px;" oninput="updGoal()"><span>원</span></div>
+          </div>
+          <div class="vd"></div>
+          <div class="set-field">
+            <div class="field-view"><span style="font-size:12px;color:var(--sub);">환불 ≤</span><span class="val" id="v-gf">8</span><span style="font-size:12px;color:var(--sub);">%</span></div>
+            <div class="field-edit"><span>환불 ≤</span><input type="number" class="goal-i" id="gf" value="8" oninput="updGoal()"><span>%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="sbd"></div>
+      <!-- 인센티브 -->
+      <div class="set-sec">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+          <span class="set-title" style="margin-bottom:0;">🎁 인센티브</span>
+          <button class="edit-btn" id="edit-btn-inc" onclick="requestEdit('inc')">🔒 수정</button>
+        </div>
+        <div class="set-row" id="inc-fields">
+          <div class="set-field">
+            <div class="field-view"><span class="rk-circ" style="background:#ffd43b;color:#664d03;">1</span><span class="val" id="v-ie1">50만원</span></div>
+            <div class="field-edit"><span class="rk-circ" style="background:#ffd43b;color:#664d03;">1</span><input type="number" class="inc-i" id="ie1" value="500000" step="10000" oninput="updIET()"><span>원</span></div>
+          </div>
+          <div class="vd"></div>
+          <div class="set-field">
+            <div class="field-view"><span class="rk-circ" style="background:#ced4da;color:#343a40;">2</span><span class="val" id="v-ie2">20만원</span></div>
+            <div class="field-edit"><span class="rk-circ" style="background:#ced4da;color:#343a40;">2</span><input type="number" class="inc-i" id="ie2" value="200000" step="10000" oninput="updIET()"><span>원</span></div>
+          </div>
+          <div class="vd"></div>
+          <div class="set-field">
+            <div class="field-view"><span class="rk-circ" style="background:#f4956a;color:#6d2f1a;">3</span><span class="val" id="v-ie3">10만원</span></div>
+            <div class="field-edit"><span class="rk-circ" style="background:#f4956a;color:#6d2f1a;">3</span><input type="number" class="inc-i" id="ie3" value="100000" step="10000" oninput="updIET()"><span>원</span></div>
+          </div>
+          <div class="vd"></div>
+          <div class="set-field">
+            <div class="field-view"><span style="font-size:12px;color:var(--sub);">최소</span><span class="val" id="v-iemin">70</span><span style="font-size:12px;color:var(--sub);">점↑</span></div>
+            <div class="field-edit"><span>최소</span><input type="number" class="inc-i inc-sm" id="iemin" value="70" min="0" max="100"><span>점 이상</span></div>
+          </div>
+        </div>
+        <div class="save-row" id="inc-save-row" style="display:none;">
+          <span class="inc-tot" id="ietot">총 상금 ₩800,000</span>
+          <button class="save-btn" onclick="saveInc()">적용</button>
+          <button class="relock-btn" onclick="relock('inc')">취소</button>
+        </div>
+        <div id="inc-tot-view" style="font-size:11px;color:var(--sub);margin-top:4px;">총 상금 ₩<span id="ietot-view">800,000</span></div>
+      </div>
+    </div>
+
+    <!-- 점수 환산 수식 설명 -->
+    <div style="padding:12px 16px;border-top:1px solid var(--border);background:#f8f9fa;">
+      <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.04em;margin-bottom:8px;">📐 점수 환산 수식</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;">
+        <div style="font-size:11.5px;color:var(--sub);display:flex;align-items:baseline;gap:6px;">
+          <span style="font-weight:600;color:var(--text);white-space:nowrap;">상담점수</span>
+          <span style="color:#ccc;">→</span>
+          <span>상담률 ÷ 목표상담률 × 100 <span style="color:#ccc;">(최대 100점)</span></span>
+        </div>
+        <div style="font-size:11.5px;color:var(--sub);display:flex;align-items:baseline;gap:6px;">
+          <span style="font-weight:600;color:var(--text);white-space:nowrap;">등록점수</span>
+          <span style="color:#ccc;">→</span>
+          <span>등록률 ÷ 목표등록률 × 100 <span style="color:#ccc;">(최대 100점)</span></span>
+        </div>
+        <div style="font-size:11.5px;color:var(--sub);display:flex;align-items:baseline;gap:6px;">
+          <span style="font-weight:600;color:var(--text);white-space:nowrap;">매출점수</span>
+          <span style="color:#ccc;">→</span>
+          <span>등록단가 ÷ 목표단가 × 100 <span style="color:#ccc;">(최대 100점)</span></span>
+        </div>
+        <div style="font-size:11.5px;color:var(--sub);display:flex;align-items:baseline;gap:6px;">
+          <span style="font-weight:600;color:var(--text);white-space:nowrap;">환불점수</span>
+          <span style="color:#ccc;">→</span>
+          <span>
+            <b style="color:var(--text);">0%</b> = 100점 &nbsp;/&nbsp;
+            <b style="color:var(--text);">0%</b> = 100점 &nbsp;/&nbsp;
+            <b style="color:var(--text);">0 ~ <span id="formula-f-max">8</span>%</b> = 100→50점 선형 &nbsp;/&nbsp;
+            <b style="color:var(--text);"><span id="formula-f-max2">8</span>~10%</b> = 50→30점 선형 &nbsp;/&nbsp;
+            <b style="color:var(--text);">10% 이상</b> = 30점
+          </span>
+        </div>
+      </div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11.5px;color:var(--sub);display:flex;align-items:baseline;gap:6px;">
+        <span style="font-weight:600;color:var(--accent);white-space:nowrap;">총점</span>
+        <span style="color:#ccc;">→</span>
+        <span>상담점수 × <span id="formula-wc" style="font-weight:600;color:var(--text);">25</span>% + 등록점수 × <span id="formula-wr" style="font-weight:600;color:var(--text);">35</span>% + 매출점수 × <span id="formula-ws" style="font-weight:600;color:var(--text);">30</span>% + 환불점수 × <span id="formula-wf" style="font-weight:600;color:var(--text);">10</span>%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page -->
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const ADMIN_PW = '0911';
+
+/* ── 담당자 명단 ── */
+const INIT_PPL=[
+  {name:'전웅인',role:'bj'},{name:'박용성',role:'kl'},{name:'장유지',role:'kl'},
+  {name:'김지안',role:'kl'},{name:'이찬빈',role:'nl'},{name:'장예성',role:'nl'},
+  {name:'김현민',role:'nl'},{name:'문기룬',role:'tj'},{name:'한승민',role:'kl'},
+  {name:'황예림',role:'kl'},{name:'현승호',role:'nl'},{name:'이상화',role:'tj'},
+  {name:'천재범',role:'kl'},{name:'이재호',role:'kl'},{name:'정지예',role:'kl'},
+  {name:'김찬유',role:'nl'},{name:'박명원',role:'tj'},{name:'김성민',role:'kl'},
+  {name:'황동현',role:'nl'}
+];
+const RL={bj:'부장',tj:'팀장',kl:'경력',nl:'신인'};
+const RC={bj:'rt bj',tj:'rt tj',kl:'rt kl',nl:'rt nl'};
+const MONTHS=['6월','7월','8월','9월','10월','11월','12월'];
+const MONTH_LABELS=['2026년 6월','2026년 7월','2026년 8월','2026년 9월','2026년 10월','2026년 11월','2026년 12월'];
+
+/* ── 상태 ── */
+let curMonth = 0; // 0 = 6월
+let mainMonth = parseInt(localStorage.getItem('kpi_main_month')) || 0; // 접속 시 기본으로 열리는 월
+// monthData[m] = 담당자별 데이터 배열
+let monthData = {};
+let ppl = []; // 현재 월 담당자 목록
+let nid = 100;
+let addOpen=false, pendingTarget=null, pendingDelId=null;
+
+/* ── 월별 설정 (가중치·목표값·인센티브) ── */
+const DEF_W   = ()=>({c:25,r:35,s:30,f:10});
+const DEF_T   = ()=>({c:60,r:70,p:1500000,f:8});
+const DEF_INC = ()=>({a:500000,b:200000,c:100000,min:70});
+let monthSettings = {};
+function getMS(m){ if(!monthSettings[m]) monthSettings[m]={W:DEF_W(),T:DEF_T(),INC:DEF_INC()}; return monthSettings[m]; }
+function curW()  { return getMS(curMonth).W;   }
+function curT()  { return getMS(curMonth).T;   }
+function curINC(){ return getMS(curMonth).INC; }
+
+/* ── 유틸 ── */
+const toNum=s=>parseFloat(String(s).replace(/,/g,''));
+const fmtComma=n=>n===null||n===''?'':Number(n).toLocaleString('ko-KR');
+const fmtWon=n=>n>=10000?(Math.floor(n/10000)+'만'+(n%10000?(n%10000).toLocaleString():'')+'원'):n.toLocaleString()+'원';
+const rd=n=>Math.round(n*10)/10;
+const cl=n=>Math.max(0,Math.min(100,n));
+const dv=v=>v===null||v===undefined?'—':v;
+
+function freshPpl(){
+  return INIT_PPL.map((p,i)=>({...p,id:nid++,c:null,r:null,pr:null,f:null}));
+}
+
+/* ── 월 초기화 ── */
+function initMonthData(m){
+  if(!monthData[m]) monthData[m]=freshPpl();
+  ppl=monthData[m];
+}
+
+/* ── 월 버튼 렌더 ── */
+function renderMonthBar(){
+  const wrap=document.getElementById('month-btns');
+  wrap.innerHTML='';
+  MONTHS.forEach((lbl,i)=>{
+    const btn=document.createElement('button');
+    let cls='mb';
+    if(i===curMonth) cls+=' active';
+    if(monthData[i]&&monthData[i].some(p=>p.c||p.r||p.pr||p.f)) cls+=' has-data';
+    if(i===mainMonth) cls+=' is-main';
+    btn.className=cls;
+    btn.textContent=lbl;
+    btn.title=i===mainMonth?'★ 메인 월':'';
+    btn.onclick=()=>switchMonth(i);
+    wrap.appendChild(btn);
+  });
+  document.getElementById('ph-sub').textContent=`${MONTH_LABELS[curMonth]} 영업일 · 컴퓨터일산`;
+  document.getElementById('score-title').textContent=`점수 환산 — ${MONTH_LABELS[curMonth]}`;
+  document.getElementById('input-title').textContent=`실적 입력 — ${MONTH_LABELS[curMonth]}`;
+}
+
+function requestPw(target){
+  pendingTarget=target;
+  document.getElementById('pw-inp').value='';
+  document.getElementById('pw-err').textContent='';
+  document.getElementById('pw-inp').classList.remove('err','shake');
+  document.getElementById('pw-backdrop').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('pw-inp').focus(),80);
+}
+function requestSetMain(){
+  pendingTarget='setMain';
+  document.getElementById('pw-inp').value='';
+  document.getElementById('pw-err').textContent='';
+  document.getElementById('pw-inp').classList.remove('err','shake');
+  document.getElementById('pw-backdrop').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('pw-inp').focus(),80);
+}
+
+function switchMonth(m){
+  monthData[curMonth]=ppl;
+  saveLocal();
+  curMonth=m;
+  initMonthData(m);
+  applySettings();
+  renderMonthBar();
+  renderInput();
+  renderScore();
+}
+
+/* ── 탭 ── */
+function showTab(id,btn){
+  // 탭 전환 전 현재 입력값 강제 저장
+  document.querySelectorAll('#itbody input').forEach(inp=>{
+    inp.dispatchEvent(new Event('input'));
+    inp.dispatchEvent(new Event('blur'));
+  });
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='score') renderScore();
+}
+
+/* ── 비밀번호 ── */
+function requestEdit(section){
+  pendingTarget=section;
+  document.getElementById('pw-inp').value='';
+  document.getElementById('pw-err').textContent='';
+  document.getElementById('pw-inp').classList.remove('err','shake');
+  document.getElementById('pw-backdrop').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('pw-inp').focus(),80);
+}
+function closePwModal(e){
+  if(e&&e.target!==document.getElementById('pw-backdrop'))return;
+  document.getElementById('pw-backdrop').classList.add('hidden');
+  pendingTarget=null;
+}
+function tryUnlock(){
+  const v=document.getElementById('pw-inp').value;
+  if(v===ADMIN_PW){
+    document.getElementById('pw-backdrop').classList.add('hidden');
+    if(pendingTarget==='del'){
+      ppl=ppl.filter(p=>p.id!==pendingDelId);
+      monthData[curMonth]=ppl;
+      saveLocal();
+      renderInput();
+      pendingDelId=null;
+    } else if(pendingTarget==='setMain'){
+      mainMonth=curMonth;
+      localStorage.setItem('kpi_main_month', mainMonth);
+      renderMonthBar();
+      showToast(`⭐ ${MONTH_LABELS[curMonth]}이 메인 월로 설정되었습니다`);
+    } else if(pendingTarget==='gear'){
+      document.getElementById('api-setup-bar').style.display='flex';
+      document.getElementById('api-url-inp').value=API_URL;
+    } else if(pendingTarget==='load'){
+      loadFromSheet();
+    } else if(pendingTarget==='save'){
+      saveToSheet();
+    } else {
+      openSection(pendingTarget);
+    }
+    pendingTarget=null;
+  } else {
+    const inp=document.getElementById('pw-inp');
+    inp.classList.add('err');inp.classList.remove('shake');
+    void inp.offsetWidth;inp.classList.add('shake');
+    document.getElementById('pw-err').textContent='비밀번호가 올바르지 않습니다';
+    inp.value='';setTimeout(()=>inp.focus(),50);
+  }
+}
+function openSection(s){
+  if(s==='goal'){
+    document.getElementById('goal-fields').classList.add('editing-mode');
+    document.getElementById('edit-btn-goal').textContent='편집 중';
+    document.getElementById('edit-btn-goal').classList.add('editing');
+    document.getElementById('unlock-bar-goal').classList.add('show');
+  } else if(s==='inc'){
+    document.getElementById('inc-fields').classList.add('editing-mode');
+    document.getElementById('edit-btn-inc').textContent='편집 중';
+    document.getElementById('edit-btn-inc').classList.add('editing');
+    document.getElementById('inc-save-row').style.display='flex';
+    document.getElementById('inc-tot-view').style.display='none';
+    updIET();
+  } else if(s==='w'){
+    document.getElementById('wbar').classList.add('editing-mode');
+    document.getElementById('edit-btn-w').textContent='편집 중';
+    document.getElementById('edit-btn-w').classList.add('editing');
+    document.getElementById('wlbl').style.display='';
+    document.getElementById('w-done-btn').style.display='';
+  }
+}
+function relock(s){
+  if(s==='goal'){
+    document.getElementById('goal-fields').classList.remove('editing-mode');
+    document.getElementById('edit-btn-goal').textContent='🔒 수정';
+    document.getElementById('edit-btn-goal').classList.remove('editing');
+    document.getElementById('unlock-bar-goal').classList.remove('show');
+  } else if(s==='inc'){
+    document.getElementById('inc-fields').classList.remove('editing-mode');
+    document.getElementById('edit-btn-inc').textContent='🔒 수정';
+    document.getElementById('edit-btn-inc').classList.remove('editing');
+    document.getElementById('inc-save-row').style.display='none';
+    document.getElementById('inc-tot-view').style.display='';
+  } else if(s==='w'){
+    document.getElementById('wbar').classList.remove('editing-mode');
+    document.getElementById('edit-btn-w').textContent='🔒 수정';
+    document.getElementById('edit-btn-w').classList.remove('editing');
+    document.getElementById('wlbl').style.display='none';
+    document.getElementById('w-done-btn').style.display='none';
+  }
+}
+
+/* ── 목표값 ── */
+function updGoal(){
+  curT().c=toNum(document.getElementById('gc').value)||1;
+  curT().r=toNum(document.getElementById('gr').value)||1;
+  curT().p=toNum(document.getElementById('gp').value)||1;
+  curT().f=toNum(document.getElementById('gf').value)||0;
+  document.getElementById('v-gc').textContent=curT().c;
+  document.getElementById('v-gr').textContent=curT().r;
+  document.getElementById('v-gp').textContent=(curT().p/10000).toFixed(0)+'만';
+  document.getElementById('v-gf').textContent=curT().f;
+  document.getElementById('gc-lbl').textContent=curT().c;
+  document.getElementById('gr-lbl').textContent=curT().r;
+  document.getElementById('gp-lbl').textContent=(curT().p/10000).toFixed(0)+'만';
+  document.getElementById('gf-lbl').textContent=curT().f;
+  // 환불점수 수식 표시 업데이트
+  const half=curT().f/2;
+  document.getElementById('formula-f-max').textContent=curT().f;
+  document.getElementById('formula-f-max2').textContent=curT().f;
+  saveLocal();
+}
+
+/* ── 인센티브 ── */
+function updIET(){
+  const t=(toNum(document.getElementById('ie1').value)||0)
+         +(toNum(document.getElementById('ie2').value)||0)
+         +(toNum(document.getElementById('ie3').value)||0);
+  document.getElementById('ietot').textContent='총 상금 ₩'+t.toLocaleString();
+}
+function saveInc(){
+  curINC().a=toNum(document.getElementById('ie1').value)||0;
+  curINC().b=toNum(document.getElementById('ie2').value)||0;
+  curINC().c=toNum(document.getElementById('ie3').value)||0;
+  curINC().min=toNum(document.getElementById('iemin').value)||0;
+  document.getElementById('v-ie1').textContent=fmtWon(curINC().a);
+  document.getElementById('v-ie2').textContent=fmtWon(curINC().b);
+  document.getElementById('v-ie3').textContent=fmtWon(curINC().c);
+  document.getElementById('v-iemin').textContent=curINC().min;
+  document.getElementById('ietot-view').textContent=(curINC().a+curINC().b+curINC().c).toLocaleString();
+  document.getElementById('iv1').textContent=fmtWon(curINC().a);
+  document.getElementById('iv2').textContent=fmtWon(curINC().b);
+  document.getElementById('iv3').textContent=fmtWon(curINC().c);
+  document.getElementById('ivmin').textContent=curINC().min;
+  document.getElementById('ivtot').textContent=(curINC().a+curINC().b+curINC().c).toLocaleString();
+  saveLocal();
+  const btn=document.querySelector('.save-btn');
+  if(btn){btn.textContent='✓ 적용됨';btn.style.background='var(--green)';
+  setTimeout(()=>{btn.textContent='적용';btn.style.background='';relock('inc');},1200);}
+}
+
+/* ── 가중치 ── */
+function chkW(){
+  const c=toNum(document.getElementById('wc').value)||0;
+  const r=toNum(document.getElementById('wr').value)||0;
+  const s=toNum(document.getElementById('ws').value)||0;
+  const f=toNum(document.getElementById('wf').value)||0;
+  const sum=c+r+s+f;
+  const lbl=document.getElementById('wlbl');
+  lbl.textContent='합계 '+sum+'% '+(sum===100?'✓':'✗');
+  lbl.className='ws '+(sum===100?'ok':'bad');
+  if(sum===100){
+    Object.assign(curW(),{c,r,s,f});
+    document.getElementById('v-wc').textContent=c;
+    document.getElementById('v-wr').textContent=r;
+    document.getElementById('v-ws').textContent=s;
+    document.getElementById('v-wf').textContent=f;
+    document.getElementById('formula-wc').textContent=c;
+    document.getElementById('formula-wr').textContent=r;
+    document.getElementById('formula-ws').textContent=s;
+    document.getElementById('formula-wf').textContent=f;
+    document.getElementById('th-c').innerHTML=`상담<br><small>×${c}%</small>`;
+    document.getElementById('th-r').innerHTML=`등록<br><small>×${r}%</small>`;
+    document.getElementById('th-s').innerHTML=`매출<br><small>×${s}%</small>`;
+    document.getElementById('th-f').innerHTML=`환불<br><small>×${f}%</small>`;
+    saveLocal();
+    renderScore();
+  }
+}
+
+/* ── 점수 계산 ── */
+function calc(p){
+  let c=null,r=null,s=null,f=null,tot=null;
+  const cv=p.c!==null&&p.c!==''?toNum(p.c)*100:null;
+  const rv=p.r!==null&&p.r!==''?toNum(p.r)*100:null;
+  const pv=p.pr!==null&&p.pr!==''?toNum(p.pr):null;
+  const fv=p.f!==null&&p.f!==''?toNum(p.f)*100:null;
+  if(cv!==null) c=cl(rd(cv/curT().c*100));
+  if(rv!==null) r=cl(rd(rv/curT().r*100));
+  if(pv!==null) s=cl(rd(pv/curT().p*100));
+  if(fv!==null){
+    const ft=curT().f;
+    if(fv>=10) f=30;
+    else if(fv>=ft) f=Math.round(50-(fv-ft)/(10-ft)*20);
+    else f=Math.round(100-(fv/ft)*50);
+  }
+  const pts=[];
+  if(c!==null)pts.push(c*curW().c/100);
+  if(r!==null)pts.push(r*curW().r/100);
+  if(s!==null)pts.push(s*curW().s/100);
+  if(f!==null)pts.push(f*curW().f/100);
+  if(pts.length) tot=rd(pts.reduce((a,b)=>a+b,0));
+  return {c,r,s,f,tot};
+}
+function scCls(v){return 'sv '+(v===null||v===undefined?'snn':v>=80?'shi':v>=50?'smd':'slo');}
+
+/* ── 담당자 추가/삭제 ── */
+function toggleAdd(){
+  addOpen=!addOpen;
+  document.getElementById('add-bar').classList.toggle('open',addOpen);
+  document.getElementById('btn-add').classList.toggle('active',addOpen);
+  if(addOpen) setTimeout(()=>document.getElementById('inp-name').focus(),50);
+}
+function addPerson(){
+  const name=document.getElementById('inp-name').value.trim();
+  const role=document.getElementById('inp-role').value;
+  let pos=parseInt(document.getElementById('inp-pos').value);
+  if(!name){document.getElementById('inp-name').focus();return;}
+  if(isNaN(pos)||pos<1)pos=1;
+  if(pos>ppl.length+1)pos=ppl.length+1;
+  ppl.splice(pos-1,0,{name,role,id:nid++,c:null,r:null,pr:null,f:null});
+  document.getElementById('inp-name').value='';
+  saveLocal();
+  renderInput();
+}
+function del(id){
+  pendingTarget='del';
+  pendingDelId=id;
+  document.getElementById('pw-inp').value='';
+  document.getElementById('pw-err').textContent='';
+  document.getElementById('pw-inp').classList.remove('err','shake');
+  document.getElementById('pw-backdrop').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('pw-inp').focus(),80);
+}
+
+/* ── 입력 탭 렌더 ── */
+function renderInput(){
+  const tb=document.getElementById('itbody');tb.innerHTML='';
+  ppl.forEach(p=>{
+    const prVal=p.pr!==null&&p.pr!==''?fmtComma(toNum(p.pr)):'';
+    const tr=document.createElement('tr');
+    tr.draggable=true;
+    tr.dataset.id=p.id;
+    tr.innerHTML=`
+      <td class="nm">${p.name}</td>
+      <td style="text-align:center;"><span class="${RC[p.role]}">${RL[p.role]}</span></td>
+      <td><input class="ci${p.c!==null&&p.c!==''?' hv':''}" type="text" inputmode="decimal" placeholder="—" value="${p.c!==null&&p.c!==''?p.c:''}" onfocus="this.select()" oninput="setPct(this,${p.id},'c')"></td>
+      <td><input class="ci${p.r!==null&&p.r!==''?' hv':''}" type="text" inputmode="decimal" placeholder="—" value="${p.r!==null&&p.r!==''?p.r:''}" onfocus="this.select()" oninput="setPct(this,${p.id},'r')"></td>
+      <td><input class="ci${p.pr!==null&&p.pr!==''?' hv':''}" type="text" inputmode="numeric" placeholder="—" value="${prVal}" onfocus="clrFmt(this,${p.id},'pr')" onblur="apFmt(this,${p.id},'pr')" oninput="setRaw(this,${p.id},'pr')"></td>
+      <td><input class="ci${p.f!==null&&p.f!==''?' hv':''}" type="text" inputmode="decimal" placeholder="—" value="${p.f!==null&&p.f!==''?p.f:''}" onfocus="this.select()" oninput="setPct(this,${p.id},'f')"></td>
+      <td style="white-space:nowrap;"><span class="drag-handle" title="드래그하여 순서 변경">⠿</span><button class="del" onclick="del(${p.id})">✕</button>`;
+    // 드래그 이벤트
+    tr.addEventListener('dragstart', onDragStart);
+    tr.addEventListener('dragover',  onDragOver);
+    tr.addEventListener('dragleave', onDragLeave);
+    tr.addEventListener('drop',      onDrop);
+    tr.addEventListener('dragend',   onDragEnd);
+    tb.appendChild(tr);
+  });
+  document.getElementById('inp-pos').max=ppl.length+1;
+}
+
+/* ── 드래그 순서 변경 ── */
+let dragSrcId=null;
+function onDragStart(e){
+  dragSrcId=parseInt(this.dataset.id);
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function onDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('#itbody tr').forEach(r=>r.classList.remove('drag-over'));
+  this.classList.add('drag-over');
+}
+function onDragLeave(){
+  this.classList.remove('drag-over');
+}
+function onDrop(e){
+  e.preventDefault();
+  const targetId=parseInt(this.dataset.id);
+  if(dragSrcId===null||dragSrcId===targetId)return;
+  const fromIdx=ppl.findIndex(p=>p.id===dragSrcId);
+  const toIdx  =ppl.findIndex(p=>p.id===targetId);
+  if(fromIdx<0||toIdx<0)return;
+  const [moved]=ppl.splice(fromIdx,1);
+  ppl.splice(toIdx,0,moved);
+  saveLocal();
+  renderInput();
+  renderScore();
+}
+function onDragEnd(){
+  document.querySelectorAll('#itbody tr').forEach(r=>{
+    r.classList.remove('dragging','drag-over');
+  });
+  dragSrcId=null;
+}
+
+function setPct(el,id,field){
+  const raw=el.value.replace(/[^\d.]/g,'');
+  const p=ppl.find(x=>x.id===parseInt(id));
+  if(p){p[field]=raw===''?null:raw;}
+  el.classList.toggle('hv',raw!=='');
+  saveLocal();
+}
+function setRaw(el,id,field){
+  const raw=el.value.replace(/,/g,'').replace(/[^\d]/g,'');
+  const p=ppl.find(x=>x.id===parseInt(id));
+  if(p){p[field]=raw===''?null:raw;}
+  el.classList.toggle('hv',raw!=='');
+  saveLocal();
+  if(raw!==''){
+    const cursor=el.selectionStart,prev=el.value;
+    const formatted=Number(raw).toLocaleString('ko-KR');
+    el.value=formatted;
+    try{el.setSelectionRange(cursor+(formatted.length-prev.length),cursor+(formatted.length-prev.length));}catch(e){}
+  }
+}
+function clrFmt(el,id,field){
+  const p=ppl.find(x=>x.id===parseInt(id));
+  if(p&&p[field]!==null&&p[field]!=='') el.value=fmtComma(toNum(p[field]));
+  el.select();
+}
+function apFmt(el,id,field){
+  const p=ppl.find(x=>x.id===parseInt(id));
+  if(p&&p[field]!==null&&p[field]!=='') el.value=fmtComma(toNum(p[field]));
+}
+
+/* ── 점수 탭 렌더 ── */
+function renderScore(){
+  const scored=ppl.map(p=>({p,sc:calc(p)}));
+  const ranked=scored.filter(x=>x.sc.tot!==null).sort((a,b)=>b.sc.tot-a.sc.tot);
+  const rm={};ranked.forEach((x,i)=>rm[x.p.id]=i+1);
+
+  const tb=document.getElementById('stbody');tb.innerHTML='';
+
+  // 평균 행 계산
+  const avg=(fn)=>{const v=ppl.map(fn).filter(x=>x!==null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const avC =avg(p=>p.c!==null&&p.c!==''?toNum(p.c)*100:null);
+  const avR =avg(p=>p.r!==null&&p.r!==''?toNum(p.r)*100:null);
+  const avPr=avg(p=>p.pr!==null&&p.pr!==''?toNum(p.pr):null);
+  const avF =avg(p=>p.f!==null&&p.f!==''?toNum(p.f)*100:null);
+  const sc2=ppl.map(p=>calc(p));
+  const avSc =avg((_,i)=>sc2[i].c);
+  const avSr =avg((_,i)=>sc2[i].r);
+  const avSs =avg((_,i)=>sc2[i].s);
+  const avSf =avg((_,i)=>sc2[i].f);
+  const avTot=avg((_,i)=>sc2[i].tot);
+  const hasAny=avC!==null||avR!==null||avPr!==null||avF!==null;
+  if(hasAny){
+    const avgTr=document.createElement('tr');
+    avgTr.style.cssText='background:#eaf7f0;';
+    avgTr.innerHTML=`
+      <td class="nm" style="font-weight:600;color:#1a7a4a;">지점 평균</td>
+      <td style="text-align:center;font-size:11px;color:#2e9e6b;">(${ppl.length}명)</td>
+      <td style="color:#2e9e6b;border-left:2px solid #ffd8a8;font-weight:500;">${avC!==null?rd(avC)+'%':'—'}</td>
+      <td style="color:#2e9e6b;font-weight:500;">${avR!==null?rd(avR)+'%':'—'}</td>
+      <td style="color:#2e9e6b;font-weight:500;">${avPr!==null?fmtComma(Math.round(avPr)):'—'}</td>
+      <td style="color:#2e9e6b;font-weight:500;">${avF!==null?rd(avF)+'%':'—'}</td>
+      <td style="border-left:2px solid var(--accent);color:#1a56c4;font-weight:500;">${avSc!==null?rd(avSc):'—'}</td>
+      <td style="color:#1a56c4;font-weight:500;">${avSr!==null?rd(avSr):'—'}</td>
+      <td style="color:#1a56c4;font-weight:500;">${avSs!==null?rd(avSs):'—'}</td>
+      <td style="color:#1a56c4;font-weight:500;">${avSf!==null?rd(avSf):'—'}</td>
+      <td style="color:#1a56c4;font-weight:700;font-size:14px;">${avTot!==null?rd(avTot):'—'}</td>
+      <td></td>`;
+    tb.appendChild(avgTr);
+    // 구분선 행
+    const sepTr=document.createElement('tr');
+    sepTr.innerHTML='<td colspan="12" style="padding:0;height:2px;background:linear-gradient(to right,#a3d9b8,transparent);"></td>';
+    tb.appendChild(sepTr);
+  }
+
+  ppl.forEach(p=>{
+    const s=calc(p);const rk=rm[p.id];
+    const rkEl=rk?`<span class="rb ${rk===1?'rb1':rk===2?'rb2':rk===3?'rb3':'rbn'}">${rk}</span>`:'<span style="color:#ccc;">—</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="nm">${p.name}</td>
+      <td style="text-align:center;"><span class="${RC[p.role]}">${RL[p.role]}</span></td>
+      <td style="color:var(--sub);border-left:2px solid #ffd8a8;">${p.c!==null&&p.c!==''?rd(toNum(p.c)*100)+'%':'—'}</td>
+      <td style="color:var(--sub);">${p.r!==null&&p.r!==''?rd(toNum(p.r)*100)+'%':'—'}</td>
+      <td style="color:var(--sub);">${p.pr!==null&&p.pr!==''?fmtComma(toNum(p.pr)):'—'}</td>
+      <td style="color:var(--sub);">${p.f!==null&&p.f!==''?rd(toNum(p.f)*100)+'%':'—'}</td>
+      <td class="${scCls(s.c)}" style="border-left:2px solid var(--accent);">${dv(s.c)}</td>
+      <td class="${scCls(s.r)}">${dv(s.r)}</td>
+      <td class="${scCls(s.s)}">${dv(s.s)}</td>
+      <td class="${scCls(s.f)}">${dv(s.f)}</td>
+      <td class="${s.tot===null?'tnn':'tv'}">${dv(s.tot)}</td>
+      <td style="text-align:center;">${rkEl}</td>`;
+    tb.appendChild(tr);
+  });
+
+  const bp=['rb1','rb2','rb3'];
+  document.getElementById('rank-panel').innerHTML=ranked.length
+    ?ranked.slice(0,5).map((x,i)=>`<div class="rrow"><span class="rb ${bp[i]||'rbn'}">${i+1}</span><span class="rnm">${x.p.name}</span><span class="rsc">${x.sc.tot}점</span></div>`).join('')
+    :'<div style="font-size:12px;color:var(--sub);">데이터 입력 탭에서 값을 입력해주세요</div>';
+
+  document.getElementById('legend').innerHTML=
+    `<span class="rt bj" style="font-size:10px;">부장</span> ${ppl.filter(p=>p.role==='bj').map(p=>p.name).join('·')||'없음'} `+
+    `<span class="rt tj" style="font-size:10px;">팀장</span> ${ppl.filter(p=>p.role==='tj').map(p=>p.name).join('·')||'없음'}<br>`+
+    `<span class="rt kl" style="font-size:10px;">경력</span> ${ppl.filter(p=>p.role==='kl').map(p=>p.name).join('·')||'없음'}<br>`+
+    `<span class="rt nl" style="font-size:10px;">신인</span> ${ppl.filter(p=>p.role==='nl').map(p=>p.name).join('·')||'없음'}`;
+
+}
+
+/* ── 엑셀 다운로드 ── */
+function buildSheet(wb, mIdx, data){
+  if(!data||!data.length) return;
+  const monthName=MONTH_LABELS[mIdx];
+  const ws=XLSX.utils.aoa_to_sheet([]);
+  const headers=['이름','직급','상담률(%)','등록률(%)','등록단가(원)','환불률(%)','상담점수','등록점수','매출점수','환불점수','총점','순위'];
+  const rows=[];
+
+  const scored=data.map(p=>({p,sc:calc(p)}));
+  const ranked=scored.filter(x=>x.sc.tot!==null).sort((a,b)=>b.sc.tot-a.sc.tot);
+  const rm={};ranked.forEach((x,i)=>rm[x.p.id]=i+1);
+
+  data.forEach(p=>{
+    const s=calc(p);const rk=rm[p.id];
+    rows.push([
+      p.name, RL[p.role],
+      p.c!==null&&p.c!==''?rd(toNum(p.c)*100):null,
+      p.r!==null&&p.r!==''?rd(toNum(p.r)*100):null,
+      p.pr!==null&&p.pr!==''?toNum(p.pr):null,
+      p.f!==null&&p.f!==''?rd(toNum(p.f)*100):null,
+      s.c, s.r, s.s, s.f, s.tot, rk||null
+    ]);
+  });
+
+  XLSX.utils.sheet_add_aoa(ws, [headers, ...rows], {origin:'A1'});
+  ws['!cols']=[{wch:10},{wch:6},{wch:11},{wch:11},{wch:13},{wch:11},{wch:10},{wch:10},{wch:10},{wch:10},{wch:8},{wch:6}];
+  XLSX.utils.book_append_sheet(wb, ws, monthName);
+}
+
+function downloadMonth(){
+  monthData[curMonth]=ppl;
+  const data=monthData[curMonth];
+  if(!data||!data.some(p=>p.c||p.r||p.pr||p.f)){
+    alert('입력된 데이터가 없습니다.');return;
+  }
+  const wb=XLSX.utils.book_new();
+  buildSheet(wb, curMonth, data);
+  XLSX.writeFile(wb, `KPI_${MONTH_LABELS[curMonth]}.xlsx`);
+}
+
+function downloadAll(){
+  monthData[curMonth]=ppl;
+  const wb=XLSX.utils.book_new();
+  let hasDat=false;
+  MONTHS.forEach((_,i)=>{
+    const data=monthData[i];
+    if(data&&data.some(p=>p.c||p.r||p.pr||p.f)){
+      buildSheet(wb,i,data);hasDat=true;
+    }
+  });
+  if(!hasDat){alert('저장된 데이터가 없습니다.');return;}
+  XLSX.writeFile(wb,'KPI_전체기록.xlsx');
+}
+
+/* ── Google 연동 ── */
+let API_URL = localStorage.getItem('kpi_api_url') || 'https://script.google.com/macros/s/AKfycbwY1Idkx75PcTF-Puu4Qhy1RAMxZRcvWhyTkJgESvG2R68jfpKyyhr_92SzAGdCP7vR/exec';
+
+function saveApiUrl(){
+  const url = document.getElementById('api-url-inp').value.trim();
+  if(!url){alert('URL을 입력해주세요');return;}
+  API_URL = url;
+  localStorage.setItem('kpi_api_url', url);
+  document.getElementById('api-setup-bar').style.display='none';
+  showToast('✅ URL이 저장되었습니다. 불러오기를 눌러 데이터를 가져오세요');
+}
+
+function setSyncStatus(msg, color='var(--sub)'){
+  const el = document.getElementById('sync-status');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.color = color;
+}
+
+function setBtnsLoading(on){
+  document.getElementById('btn-load').disabled = on;
+  document.getElementById('btn-save-sheet').disabled = on;
+  document.getElementById('btn-load').textContent = on ? '⏳ 불러오는 중...' : '☁️ 불러오기';
+}
+
+function jsonp(url){
+  return new Promise((resolve,reject)=>{
+    const cb='jsonp_cb_'+Date.now();
+    const script=document.createElement('script');
+    let done=false;
+    const timer=setTimeout(()=>{
+      if(done)return;done=true;
+      delete window[cb];
+      if(script.parentNode)script.parentNode.removeChild(script);
+      reject(new Error('응답 시간 초과'));
+    },10000);
+    window[cb]=function(data){
+      if(done)return;done=true;
+      clearTimeout(timer);
+      delete window[cb];
+      if(script.parentNode)script.parentNode.removeChild(script);
+      resolve(data);
+    };
+    script.onerror=()=>{
+      if(done)return;done=true;
+      clearTimeout(timer);
+      delete window[cb];
+      if(script.parentNode)script.parentNode.removeChild(script);
+      reject(new Error('스크립트 오류'));
+    };
+    script.src=url+(url.includes('?')?'&':'?')+'callback='+cb+'&_='+Date.now();
+    document.body.appendChild(script);
+  });
+}
+
+async function loadFromSheet(){
+  if(!API_URL){
+    document.getElementById('api-setup-bar').style.display='flex';
+    document.getElementById('api-url-inp').focus();
+    return;
+  }
+  setBtnsLoading(true);
+  setSyncStatus('불러오는 중...');
+
+  const cbName='jsonp_cb_'+Date.now();
+  const script=document.createElement('script');
+  const timer=setTimeout(()=>{
+    if(window[cbName]){
+      delete window[cbName];
+      if(script.parentNode)script.parentNode.removeChild(script);
+      setSyncStatus('❌ 불러오기 실패','var(--red)');
+      showToast('❌ 응답 시간 초과');
+      setBtnsLoading(false);
+    }
+  },10000);
+
+  window[cbName]=function(json){
+    clearTimeout(timer);
+    delete window[cbName];
+    if(script.parentNode)script.parentNode.removeChild(script);
+    try{
+      if(json.error) throw new Error(json.error);
+      const md=json.monthData||{};
+      Object.keys(md).forEach(mKey=>{
+        const idx=parseInt(mKey);
+        if(isNaN(idx))return;
+        monthData[idx]=md[mKey].map(p=>({...p,id:nid++}));
+      });
+      const s=json.settings||{};
+      if(s.mainMonth!==undefined) mainMonth=parseInt(s.mainMonth)||0;
+      if(s.monthSettings){try{
+        const ms=JSON.parse(s.monthSettings);
+        Object.keys(ms).forEach(k=>{ monthSettings[parseInt(k)]=ms[k]; });
+      }catch(e){}}
+      if(!s.monthSettings){
+        if(s.T){try{Object.assign(getMS(0).T,JSON.parse(s.T));}catch(e){}}
+        if(s.W){try{Object.assign(getMS(0).W,JSON.parse(s.W));}catch(e){}}
+        if(s.INC){try{Object.assign(getMS(0).INC,JSON.parse(s.INC));}catch(e){}}
+      }
+      curMonth=mainMonth;
+      initMonthData(curMonth);
+      applySettings();
+      renderMonthBar();
+      renderInput();
+      renderScore();
+      setSyncStatus('✅ '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+' 불러옴','var(--green)');
+    }catch(e){
+      setSyncStatus('❌ 불러오기 실패','var(--red)');
+      showToast('❌ '+e.message);
+    }
+    setBtnsLoading(false);
+  };
+
+  script.onerror=()=>{
+    clearTimeout(timer);
+    delete window[cbName];
+    setSyncStatus('❌ 불러오기 실패','var(--red)');
+    showToast('❌ 스크립트 오류');
+    setBtnsLoading(false);
+  };
+
+  script.src=API_URL+'?callback='+cbName+'&_='+Date.now();
+  document.head.appendChild(script);
+}
+
+async function saveToSheet(){
+  if(!API_URL){
+    document.getElementById('api-setup-bar').style.display='flex';
+    document.getElementById('api-url-inp').focus();
+    return;
+  }
+  monthData[curMonth]=ppl;
+  const btn=document.getElementById('btn-save-sheet');
+  btn.disabled=true;btn.textContent='⏳ 저장 중...';
+  setSyncStatus('저장 중...');
+  try{
+    const payload={
+      monthData:monthData,
+      settings:{mainMonth:mainMonth,monthSettings:JSON.stringify(monthSettings)}
+    };
+    const fd=new FormData();
+    fd.append('payload',JSON.stringify(payload));
+    const res=await fetch(API_URL,{method:'POST',body:fd});
+    const json=await res.json();
+    if(!json.ok) throw new Error(json.error||'서버 오류');
+    setSyncStatus('✅ '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+' 저장됨','var(--green)');
+    showToast('✅ Google 스프레드시트에 저장되었습니다');
+  }catch(e){
+    setSyncStatus('❌ 저장 실패','var(--red)');
+    showToast('❌ '+e.message);
+  }
+  btn.disabled=false;btn.textContent='💾 저장';
+}
+
+function applySettings(){
+  document.getElementById('gc').value = curT().c;
+  document.getElementById('gr').value = curT().r;
+  document.getElementById('gp').value = curT().p;
+  document.getElementById('gf').value = curT().f;
+  updGoal();
+  document.getElementById('wc').value = curW().c;
+  document.getElementById('wr').value = curW().r;
+  document.getElementById('ws').value = curW().s;
+  document.getElementById('wf').value = curW().f;
+  chkW();
+  document.getElementById('ie1').value = curINC().a;
+  document.getElementById('ie2').value = curINC().b;
+  document.getElementById('ie3').value = curINC().c;
+  document.getElementById('iemin').value = curINC().min;
+  // 인센티브 뷰 직접 업데이트
+  document.getElementById('v-ie1').textContent=fmtWon(curINC().a);
+  document.getElementById('v-ie2').textContent=fmtWon(curINC().b);
+  document.getElementById('v-ie3').textContent=fmtWon(curINC().c);
+  document.getElementById('v-iemin').textContent=curINC().min;
+  document.getElementById('ietot-view').textContent=(curINC().a+curINC().b+curINC().c).toLocaleString();
+  document.getElementById('iv1').textContent=fmtWon(curINC().a);
+  document.getElementById('iv2').textContent=fmtWon(curINC().b);
+  document.getElementById('iv3').textContent=fmtWon(curINC().c);
+  document.getElementById('ivmin').textContent=curINC().min;
+  document.getElementById('ivtot').textContent=(curINC().a+curINC().b+curINC().c).toLocaleString();
+}
+
+// 저장된 URL이 있으면 setup bar 숨김
+if(API_URL) document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('api-setup-bar').style.display='none';
+  document.getElementById('api-url-inp').value = API_URL;
+});
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ── 초기화 ── */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.getElementById('pw-backdrop').classList.add('hidden');
+});
+
+/* ── 로컬 자동저장 ── */
+function saveLocal(){
+  try{
+    monthData[curMonth]=ppl;
+    localStorage.setItem('kpi_monthData', JSON.stringify(monthData));
+    localStorage.setItem('kpi_monthSettings', JSON.stringify(monthSettings));
+  }catch(e){}
+}
+
+function loadLocal(){
+  try{
+    const md=localStorage.getItem('kpi_monthData');
+    const ms=localStorage.getItem('kpi_monthSettings');
+    if(md) Object.assign(monthData, JSON.parse(md));
+    if(ms){
+      const parsed=JSON.parse(ms);
+      Object.keys(parsed).forEach(k=>{ monthSettings[parseInt(k)]=parsed[k]; });
+    }
+  }catch(e){}
+}
+
+// 새로고침 시 로컬 데이터 복원
+loadLocal();
+curMonth=mainMonth;
+initMonthData(curMonth);
+applySettings();
+renderMonthBar();
+renderInput();
+renderScore();
+</script>
+</body>
+</html>
+
+
