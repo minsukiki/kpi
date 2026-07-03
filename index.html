@@ -1275,7 +1275,9 @@ renderInput();
 renderScore();
 
 // localStorage 데이터 없으면 자동 불러오기
-if(!localStorage.getItem('kpi_monthData') && API_URL) setTimeout(()=>loadFromSheet(), 500);
+const _saved = localStorage.getItem('kpi_monthData');
+const _hasData = _saved && Object.keys(JSON.parse(_saved)||{}).length > 0;
+if(!_hasData && API_URL) setTimeout(()=>loadFromSheet(), 500);
 </script>
 </body>
 </html>
