@@ -1265,10 +1265,6 @@ function loadLocal(){
   }catch(e){}
 }
 
-// localStorage 데이터 있는지 미리 체크 (loadLocal 실행 전)
-const _saved = localStorage.getItem('kpi_monthData');
-const _hasData = _saved && Object.keys(JSON.parse(_saved)||{}).length > 0;
-
 // 새로고침 시 로컬 데이터 복원
 loadLocal();
 curMonth=mainMonth;
@@ -1278,8 +1274,8 @@ renderMonthBar();
 renderInput();
 renderScore();
 
-// 데이터 없으면 자동 불러오기
-if(!_hasData && API_URL) setTimeout(()=>loadFromSheet(), 500);
+// 항상 자동 불러오기 (Google 시트가 최신 데이터 기준)
+if(API_URL) setTimeout(()=>loadFromSheet(), 800);
 </script>
 </body>
 </html>
