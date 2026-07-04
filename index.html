@@ -249,12 +249,13 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
 
 <!-- 탭 -->
 <div class="tab-nav">
-  <button class="tab-btn active" id="tab-score-btn" onclick="showTab('score',this)">📊 점수 환산</button>
+  <button class="tab-btn active" id="tab-rank-btn" onclick="showTab('rank',this)">🏆 랭킹</button>
+  <button class="tab-btn" id="tab-score-btn" onclick="showTab('score',this)">📊 점수 환산</button>
   <button class="tab-btn" onclick="showTab('input',this)">📋 데이터 입력</button>
 </div>
 
 <!-- ══ TAB 1: 점수 환산 ══ -->
-<div class="pane active" id="tab-score">
+<div class="pane" id="tab-score">
   <div class="card">
     <div class="ch"><span class="ct" id="score-title">점수 환산 결과</span></div>
     <table class="tbl">
@@ -328,7 +329,62 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
   </div>
 </div>
 
-<!-- ══ TAB 2: 데이터 입력 ══ -->
+<!-- ══ TAB 2: 랭킹 ══ -->
+<div class="pane active" id="tab-rank">
+  <!-- 오늘의 메시지 -->
+  <div class="card" style="margin-bottom:12px;">
+    <div class="ch">
+      <span class="ct">✨ 오늘의 메시지</span>
+      <button class="edit-btn" id="edit-btn-msg" onclick="requestPw('msg')">🔒 수정</button>
+    </div>
+    <div style="padding:16px;">
+      <div id="msg-view" style="font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap;min-height:60px;"></div>
+      <textarea id="msg-edit" style="display:none;width:100%;min-height:100px;padding:10px;font-size:13px;border:1.5px solid var(--accent);border-radius:var(--rs);resize:vertical;font-family:inherit;line-height:1.8;" placeholder="직원들에게 전달할 메시지를 입력하세요..."></textarea>
+      <div id="msg-edit-btns" style="display:none;margin-top:8px;gap:8px;">
+        <button class="btn bp bsm" onclick="saveMsg()">저장</button>
+        <button class="btn bg bsm" onclick="cancelMsg()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 전체 순위 -->
+  <div class="card" style="margin-bottom:12px;">
+    <div class="ch"><span class="ct">🏆 전체 순위</span><span id="rank-month-label" style="font-size:11px;color:var(--sub);"></span></div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th style="width:44px;">순위</th>
+          <th class="L">이름</th>
+          <th style="width:58px;">직급</th>
+          <th>상담</th><th>등록</th><th>매출</th><th>환불</th>
+          <th style="font-weight:700;color:var(--accent);">총점</th>
+        </tr>
+      </thead>
+      <tbody id="rank-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 누적 1~3위 횟수 -->
+  <div class="card" style="margin-bottom:12px;">
+    <div class="ch"><span class="ct">🥇 누적 수상 횟수</span><span style="font-size:11px;color:var(--sub);">입력된 월 기준 자동 집계</span></div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th class="L">이름</th>
+          <th style="width:58px;">직급</th>
+          <th style="color:#b8860b;">🥇 1위</th>
+          <th style="color:#888;">🥈 2위</th>
+          <th style="color:#a0522d;">🥉 3위</th>
+          <th>합계</th>
+        </tr>
+      </thead>
+      <tbody id="award-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══ TAB 3: 데이터 입력 ══ -->
 <div class="pane" id="tab-input">
   <div class="card">
     <div class="ch">
@@ -581,6 +637,7 @@ function switchMonth(m){
   renderMonthBar();
   renderInput();
   renderScore();
+  renderRank();
 }
 
 /* ── 탭 ── */
@@ -595,6 +652,7 @@ function showTab(id,btn){
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
   if(id==='score') renderScore();
+  if(id==='rank') renderRank();
 }
 
 /* ── 비밀번호 ── */
@@ -633,6 +691,8 @@ function tryUnlock(){
       loadFromSheet();
     } else if(pendingTarget==='save'){
       saveToSheet();
+    } else if(pendingTarget==='msg'){
+      openMsgEdit();
     } else {
       openSection(pendingTarget);
     }
@@ -1143,12 +1203,14 @@ async function loadFromSheet(){
         if(s.W){try{Object.assign(getMS(0).W,JSON.parse(s.W));}catch(e){}}
         if(s.INC){try{Object.assign(getMS(0).INC,JSON.parse(s.INC));}catch(e){}}
       }
+      if(s.todayMsg!==undefined){ localStorage.setItem('kpi_today_msg', s.todayMsg); }
       curMonth=mainMonth;
       initMonthData(curMonth);
       applySettings();
       renderMonthBar();
       renderInput();
       renderScore();
+      renderRank();
       setSyncStatus('✅ '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+' 불러옴','var(--green)');
     }catch(e){
       setSyncStatus('❌ 불러오기 실패','var(--red)');
@@ -1182,7 +1244,7 @@ async function saveToSheet(){
   try{
     const payload={
       monthData:monthData,
-      settings:{mainMonth:mainMonth,monthSettings:JSON.stringify(monthSettings)}
+      settings:{mainMonth:mainMonth,monthSettings:JSON.stringify(monthSettings),todayMsg:localStorage.getItem('kpi_today_msg')||''}
     };
     const fd=new FormData();
     fd.append('payload',JSON.stringify(payload));
@@ -1233,6 +1295,115 @@ document.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById('api-url-inp').value = API_URL;
   }
 });
+/* ── 랭킹 탭 ── */
+function renderRank(){
+  const allMonths = Object.keys(monthData).map(Number);
+
+  // 현재 월 순위 테이블
+  document.getElementById('rank-month-label').textContent = MONTH_LABELS[curMonth];
+  const tb = document.getElementById('rank-tbody');
+  tb.innerHTML='';
+  const scored = ppl.map(p=>({p, sc:calc(p)}));
+  const ranked = scored.filter(x=>x.sc.tot!==null).sort((a,b)=>b.sc.tot-a.sc.tot);
+  const unranked = scored.filter(x=>x.sc.tot===null);
+
+  ranked.forEach((x,i)=>{
+    const rk = i+1;
+    const rkEl = rk===1?`<span class="rb rb1">1</span>`:rk===2?`<span class="rb rb2">2</span>`:rk===3?`<span class="rb rb3">3</span>`:`<span class="rb rbn">${rk}</span>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td style="text-align:center;">${rkEl}</td>
+      <td class="nm">${x.p.name}</td>
+      <td style="text-align:center;"><span class="${RC[x.p.role]}">${RL[x.p.role]}</span></td>
+      <td class="${scCls(x.sc.c)}">${dv(x.sc.c)}</td>
+      <td class="${scCls(x.sc.r)}">${dv(x.sc.r)}</td>
+      <td class="${scCls(x.sc.s)}">${dv(x.sc.s)}</td>
+      <td class="${scCls(x.sc.f)}">${dv(x.sc.f)}</td>
+      <td class="tv">${x.sc.tot}</td>`;
+    tb.appendChild(tr);
+  });
+  unranked.forEach(x=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td style="text-align:center;color:#ccc;">—</td>
+      <td class="nm">${x.p.name}</td>
+      <td style="text-align:center;"><span class="${RC[x.p.role]}">${RL[x.p.role]}</span></td>
+      <td colspan="5" style="color:#ccc;text-align:center;">데이터 없음</td>`;
+    tb.appendChild(tr);
+  });
+
+  // 누적 1~3위 집계
+  const awardMap = {};
+  ppl.forEach(p=>{ awardMap[p.name]={gold:0,silver:0,bronze:0,role:p.role}; });
+
+  allMonths.forEach(m=>{
+    const mData = monthData[m];
+    if(!mData) return;
+    const mScored = mData.map(p=>({p, sc:calc(p)}));
+    const mRanked = mScored.filter(x=>x.sc.tot!==null).sort((a,b)=>b.sc.tot-a.sc.tot);
+    mRanked.forEach((x,i)=>{
+      if(!awardMap[x.p.name]) awardMap[x.p.name]={gold:0,silver:0,bronze:0,role:x.p.role};
+      if(i===0) awardMap[x.p.name].gold++;
+      else if(i===1) awardMap[x.p.name].silver++;
+      else if(i===2) awardMap[x.p.name].bronze++;
+    });
+  });
+
+  const atb = document.getElementById('award-tbody');
+  atb.innerHTML='';
+  const awards = Object.entries(awardMap)
+    .map(([name,v])=>({name,...v,total:v.gold+v.silver+v.bronze}))
+    .sort((a,b)=>b.total-a.total||b.gold-a.gold||b.silver-a.silver);
+
+  awards.forEach(a=>{
+    if(a.total===0) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="nm">${a.name}</td>
+      <td style="text-align:center;"><span class="${RC[a.role]}">${RL[a.role]}</span></td>
+      <td style="text-align:center;font-weight:700;color:#b8860b;">${a.gold||'—'}</td>
+      <td style="text-align:center;font-weight:600;color:#888;">${a.silver||'—'}</td>
+      <td style="text-align:center;font-weight:600;color:#a0522d;">${a.bronze||'—'}</td>
+      <td style="text-align:center;font-weight:600;color:var(--accent);">${a.total}</td>`;
+    atb.appendChild(tr);
+  });
+  if(!awards.some(a=>a.total>0)){
+    atb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:16px;">수상 기록이 없습니다</td></tr>';
+  }
+
+  // 오늘의 메시지 표시
+  const msg = localStorage.getItem('kpi_today_msg')||'';
+  const msgView = document.getElementById('msg-view');
+  if(msgView) msgView.textContent = msg || '(등록된 메시지가 없습니다)';
+}
+
+/* ── 오늘의 메시지 ── */
+function openMsgEdit(){
+  const msg = localStorage.getItem('kpi_today_msg')||'';
+  document.getElementById('msg-edit').value = msg;
+  document.getElementById('msg-view').style.display='none';
+  document.getElementById('msg-edit').style.display='block';
+  document.getElementById('msg-edit-btns').style.display='flex';
+  document.getElementById('edit-btn-msg').style.display='none';
+  document.getElementById('msg-edit').focus();
+}
+function saveMsg(){
+  const msg = document.getElementById('msg-edit').value;
+  localStorage.setItem('kpi_today_msg', msg);
+  document.getElementById('msg-view').textContent = msg || '(등록된 메시지가 없습니다)';
+  document.getElementById('msg-view').style.display='block';
+  document.getElementById('msg-edit').style.display='none';
+  document.getElementById('msg-edit-btns').style.display='none';
+  document.getElementById('edit-btn-msg').style.display='';
+  showToast('✅ 메시지가 저장되었습니다');
+}
+function cancelMsg(){
+  document.getElementById('msg-view').style.display='block';
+  document.getElementById('msg-edit').style.display='none';
+  document.getElementById('msg-edit-btns').style.display='none';
+  document.getElementById('edit-btn-msg').style.display='';
+}
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
@@ -1273,6 +1444,7 @@ applySettings();
 renderMonthBar();
 renderInput();
 renderScore();
+renderRank();
 
 // 항상 자동 불러오기 (Google 시트가 최신 데이터 기준)
 if(API_URL) setTimeout(()=>loadFromSheet(), 800);
