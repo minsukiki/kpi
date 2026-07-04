@@ -694,6 +694,7 @@ function tryUnlock(){
       mainMonth=curMonth;
       localStorage.setItem('kpi_main_month', mainMonth);
       renderMonthBar();
+      saveToSheet();
       showToast(`⭐ ${MONTH_LABELS[curMonth]}이 메인 월로 설정되었습니다`);
     } else if(pendingTarget==='gear'){
       document.getElementById('api-setup-bar').style.display='flex';
@@ -789,6 +790,7 @@ function updGoal(){
   document.getElementById('formula-f-max').textContent=curT().f;
   document.getElementById('formula-f-max2').textContent=curT().f;
   saveLocal();
+  if(isAdminMode) saveToSheet();
 }
 
 /* ── 인센티브 ── */
@@ -814,6 +816,7 @@ function saveInc(){
   document.getElementById('ivmin').textContent=curINC().min;
   document.getElementById('ivtot').textContent=(curINC().a+curINC().b+curINC().c).toLocaleString();
   saveLocal();
+  if(isAdminMode) saveToSheet();
   const btn=document.querySelector('.save-btn');
   if(btn){btn.textContent='✓ 적용됨';btn.style.background='var(--green)';
   setTimeout(()=>{btn.textContent='적용';btn.style.background='';relock('inc');},1200);}
@@ -844,6 +847,7 @@ function chkW(){
     document.getElementById('th-s').innerHTML=`매출<br><small>×${s}%</small>`;
     document.getElementById('th-f').innerHTML=`환불<br><small>×${f}%</small>`;
     saveLocal();
+    if(isAdminMode) saveToSheet();
     renderScore();
   }
 }
@@ -1463,6 +1467,7 @@ function saveMsg(){
   document.getElementById('msg-edit').style.display='none';
   document.getElementById('msg-edit-btns').style.display='none';
   document.getElementById('edit-btn-msg').style.display='';
+  saveToSheet();
   showToast('✅ 메시지가 저장되었습니다');
 }
 function cancelMsg(){
