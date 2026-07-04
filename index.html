@@ -163,7 +163,7 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
 .tv{font-size:15px;font-weight:700;color:var(--accent);}
 .tnn{font-size:15px;font-weight:700;color:#ccc;}
 
-.wbar{padding:9px 16px;background:#f8f9fa;border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.wbar{padding:9px 16px;background:#f8f9fa;border-top:1px solid var(--border);display:none;align-items:center;gap:16px;flex-wrap:wrap;}
 .wbar .lbl{font-size:11px;font-weight:700;color:var(--accent);}
 .wg{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--sub);}
 .wg input{width:46px;padding:4px 6px;font-size:12.5px;border:1px solid #c5cae9;border-radius:var(--rs);background:#fff;text-align:center;color:var(--text);}
@@ -223,6 +223,7 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
     <button class="btn-sync" onclick="requestPw('gear')" title="Google 연동 설정">⚙️</button>
     <button class="btn-sync" id="btn-load" onclick="requestPw('load')">☁️ 불러오기</button>
     <button class="btn-sync btn-sync-save" id="btn-save-sheet" onclick="requestPw('save')">💾 저장</button>
+    <button class="btn-sync" id="btn-admin" onclick="requestPw('adminMode')" style="border-color:#e67700;color:#e67700;">🔒 관리자</button>
   </div>
 </div>
 
@@ -258,6 +259,17 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
 <div class="pane" id="tab-score">
   <div class="card">
     <div class="ch"><span class="ct" id="score-title">점수 환산 결과</span></div>
+    <div id="goal-row" style="display:flex;gap:16px;padding:7px 16px;border-bottom:1px solid var(--border);background:#fafafa;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:11px;font-weight:700;color:var(--sub);">🎯 목표</span>
+      <span style="font-size:11px;color:var(--sub);">상담 <span id="gr-c" style="font-weight:600;color:var(--accent);">60%</span></span>
+      <span style="color:#ddd;">·</span>
+      <span style="font-size:11px;color:var(--sub);">등록 <span id="gr-r" style="font-weight:600;color:var(--accent);">70%</span></span>
+      <span style="color:#ddd;">·</span>
+      <span style="font-size:11px;color:var(--sub);">단가 <span id="gr-p" style="font-weight:600;color:var(--accent);">150만원</span></span>
+      <span style="color:#ddd;">·</span>
+      <span style="font-size:11px;color:var(--sub);">환불 <span id="gr-f" style="font-weight:600;color:var(--accent);">≤8%</span></span>
+      <span style="margin-left:auto;"><button class="edit-btn" id="edit-btn-w" onclick="openSection('w')" style="font-size:11px;display:none;">가중치 수정</button></span>
+    </div>
     <table class="tbl">
       <thead>
         <tr>
@@ -287,7 +299,6 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
     <div class="wbar" id="wbar">
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="lbl">가중치</span>
-        <button class="edit-btn" id="edit-btn-w" onclick="requestEdit('w')">🔒 수정</button>
       </div>
       <div class="set-field">
         <div class="field-view"><span style="font-size:12.5px;color:var(--sub);">상담</span><span class="val" id="v-wc" style="font-size:12.5px;font-weight:600;">25</span><span style="font-size:12.5px;color:var(--sub);">%</span></div>
@@ -335,7 +346,7 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
   <div class="card" style="margin-bottom:12px;">
     <div class="ch">
       <span class="ct">✨ 오늘의 메시지</span>
-      <button class="edit-btn" id="edit-btn-msg" onclick="requestPw('msg')">🔒 수정</button>
+      <button class="edit-btn" id="edit-btn-msg" onclick="openMsgEdit()" style="display:none;">수정</button>
     </div>
     <div style="padding:16px;">
       <div id="msg-view" style="font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap;min-height:60px;"></div>
@@ -389,7 +400,7 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
   <div class="card">
     <div class="ch">
       <span class="ct" id="input-title">실적 입력</span>
-      <button class="btn bg bsm" id="btn-add" onclick="toggleAdd()">+ 담당자 추가</button>
+      <button class="btn bg bsm" id="btn-add" onclick="toggleAdd()" style="display:none;">+ 담당자 추가</button>
     </div>
     <div class="add-bar" id="add-bar">
       <label>이름</label><input type="text" id="inp-name" placeholder="이름">
@@ -429,7 +440,7 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
       <div class="set-sec">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
           <span class="set-title" style="margin-bottom:0;">🎯 목표값</span>
-          <button class="edit-btn" id="edit-btn-goal" onclick="requestEdit('goal')">🔒 수정</button>
+          <button class="edit-btn" id="edit-btn-goal" onclick="openSection('goal')" style="display:none;">수정</button>
         </div>
         <div class="set-row" id="goal-fields">
           <div class="set-field">
@@ -458,7 +469,7 @@ body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo',Pr
       <div class="set-sec">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
           <span class="set-title" style="margin-bottom:0;">🎁 인센티브</span>
-          <button class="edit-btn" id="edit-btn-inc" onclick="requestEdit('inc')">🔒 수정</button>
+          <button class="edit-btn" id="edit-btn-inc" onclick="openSection('inc')" style="display:none;">수정</button>
         </div>
         <div class="set-row" id="inc-fields">
           <div class="set-field">
@@ -691,8 +702,13 @@ function tryUnlock(){
       loadFromSheet();
     } else if(pendingTarget==='save'){
       saveToSheet();
+    } else if(pendingTarget==='adminMode'){
+      enterAdminMode();
     } else if(pendingTarget==='msg'){
       openMsgEdit();
+    } else if(pendingTarget==='w'){
+      document.getElementById('wbar').style.display='flex';
+      openSection('w');
     } else {
       openSection(pendingTarget);
     }
@@ -740,7 +756,8 @@ function relock(s){
     document.getElementById('inc-tot-view').style.display='';
   } else if(s==='w'){
     document.getElementById('wbar').classList.remove('editing-mode');
-    document.getElementById('edit-btn-w').textContent='🔒 수정';
+    if(!isAdminMode) document.getElementById('wbar').style.display='none';
+    document.getElementById('edit-btn-w').textContent='가중치 수정';
     document.getElementById('edit-btn-w').classList.remove('editing');
     document.getElementById('wlbl').style.display='none';
     document.getElementById('w-done-btn').style.display='none';
@@ -761,6 +778,12 @@ function updGoal(){
   document.getElementById('gr-lbl').textContent=curT().r;
   document.getElementById('gp-lbl').textContent=(curT().p/10000).toFixed(0)+'만';
   document.getElementById('gf-lbl').textContent=curT().f;
+  if(document.getElementById('gr-c')){
+    document.getElementById('gr-c').textContent=curT().c+'%';
+    document.getElementById('gr-r').textContent=curT().r+'%';
+    document.getElementById('gr-p').textContent=(curT().p/10000).toFixed(0)+'만원';
+    document.getElementById('gr-f').textContent='≤'+curT().f+'%';
+  }
   // 환불점수 수식 표시 업데이트
   const half=curT().f/2;
   document.getElementById('formula-f-max').textContent=curT().f;
@@ -895,7 +918,7 @@ function renderInput(){
       <td><input class="ci${p.r!==null&&p.r!==''?' hv':''}" type="text" inputmode="decimal" placeholder="—" value="${p.r!==null&&p.r!==''?p.r:''}" onfocus="this.select()" oninput="setPct(this,${p.id},'r')"></td>
       <td><input class="ci${p.pr!==null&&p.pr!==''?' hv':''}" type="text" inputmode="numeric" placeholder="—" value="${prVal}" onfocus="clrFmt(this,${p.id},'pr')" onblur="apFmt(this,${p.id},'pr')" oninput="setRaw(this,${p.id},'pr')"></td>
       <td><input class="ci${p.f!==null&&p.f!==''?' hv':''}" type="text" inputmode="decimal" placeholder="—" value="${p.f!==null&&p.f!==''?p.f:''}" onfocus="this.select()" oninput="setPct(this,${p.id},'f')"></td>
-      <td style="white-space:nowrap;"><span class="drag-handle" title="드래그하여 순서 변경">⠿</span><button class="del" onclick="del(${p.id})">✕</button>`;
+      <td style="white-space:nowrap;"><span class="drag-handle" title="드래그하여 순서 변경">⠿</span><button class="del" onclick="del(${p.id})" style="display:none">✕</button>`;
     // 드래그 이벤트
     tr.addEventListener('dragstart', onDragStart);
     tr.addEventListener('dragover',  onDragOver);
@@ -905,6 +928,51 @@ function renderInput(){
     tb.appendChild(tr);
   });
   document.getElementById('inp-pos').max=ppl.length+1;
+}
+
+/* ── 관리자 모드 ── */
+let isAdminMode = false;
+function enterAdminMode(){
+  isAdminMode = true;
+  // 헤더 버튼 변경
+  const btn = document.getElementById('btn-admin');
+  btn.textContent = '🔓 관리자 종료';
+  btn.style.borderColor = 'var(--red)';
+  btn.style.color = 'var(--red)';
+  btn.onclick = exitAdminMode;
+  // 모든 수정 버튼 표시
+  ['edit-btn-w','edit-btn-msg','edit-btn-goal','edit-btn-inc'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display='';
+  });
+  document.getElementById('btn-add').style.display='';
+  document.getElementById('wbar').style.display='flex';
+  // 담당자 삭제 버튼 표시
+  document.querySelectorAll('.del').forEach(el=>el.style.display='');
+  renderInput();
+  showToast('🔓 관리자 모드 진입');
+}
+function exitAdminMode(){
+  isAdminMode = false;
+  // 헤더 버튼 원복
+  const btn = document.getElementById('btn-admin');
+  btn.textContent = '🔒 관리자';
+  btn.style.borderColor = '#e67700';
+  btn.style.color = '#e67700';
+  btn.onclick = ()=>requestPw('adminMode');
+  // 모든 수정 버튼 숨기기
+  ['edit-btn-w','edit-btn-msg','edit-btn-goal','edit-btn-inc'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  document.getElementById('btn-add').style.display='none';
+  document.getElementById('wbar').style.display='none';
+  // 모든 편집 섹션 잠금
+  relock('goal'); relock('inc'); relock('w'); cancelMsg();
+  // 담당자 삭제 버튼 숨기기
+  document.querySelectorAll('.del').forEach(el=>el.style.display='none');
+  renderInput();
+  showToast('🔒 관리자 모드 종료');
 }
 
 /* ── 드래그 순서 변경 ── */
