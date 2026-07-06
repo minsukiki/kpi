@@ -1259,6 +1259,8 @@ async function loadFromSheet(){
     try{
       if(json.error) throw new Error(json.error);
       const md=json.monthData||{};
+      // 기존 데이터 초기화 후 덮어쓰기 (중복 방지)
+      Object.keys(monthData).forEach(k=>delete monthData[k]);
       Object.keys(md).forEach(mKey=>{
         const idx=parseInt(mKey);
         if(isNaN(idx))return;
